@@ -78,7 +78,7 @@ export default function Final({ params }) {
       <FormControl fullWidth variant="outlined" margin="normal">
         <Stack direction="row" spacing={1} alignItems="center">
           <Typography sx={{ alignItems: "center", paddingTop: 2 }}>
-            {process.env.BASE_URL}
+            {`${process.env.BASE_URL}/api/Asite/`}
           </Typography>
           <TextField
             id="standard-basic"
