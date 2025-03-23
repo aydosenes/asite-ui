@@ -37,10 +37,15 @@ export default function Final({ params }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
     try {
-      const content = `${process.env.BASE_URL}${endpoint}`;
-      await navigator.clipboard.writeText(content);
+      const content = `${process.env.BASE_URL}/api/Asite/${endpoint}`;
+      //await navigator.clipboard.writeText(content);
+      const textArea = document.createElement("textarea");
+      textArea.value = content;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
       setCopied(true);
-      console.log(unwrappedParams);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
@@ -117,7 +122,11 @@ export default function Final({ params }) {
             variant="contained"
             color="primary"
             onClick={() =>
-              router.push(`/asite/${decodeURIComponent(unwrappedParams.sessionId)}/mapping/${unwrappedParams.userId}`)
+              router.push(
+                `/asite/${decodeURIComponent(
+                  unwrappedParams.sessionId
+                )}/mapping/${unwrappedParams.userId}`
+              )
             }
             fullWidth
           >
