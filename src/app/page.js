@@ -19,20 +19,19 @@ export default function Home() {
       setError(null);
       setLoading(true);
       console.log(process.env.BASE_URL);
-      const response = await fetch(
-        `${process.env.BASE_URL}/api/Asite/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      const response = await fetch(`${process.env.BASE_URL}/api/Asite/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
       if (response.ok) {
         const data = await response.json();
-        router.push(`/asite/${data.sessionId}/mapping/${data.userId}`);
+        if (data.message) {
+          setError(data.message);
+          setLoading(false);
+        } else router.push(`/asite/${data.sessionId}/mapping/${data.userId}`);
       } else {
         const data = await response.json();
-        console.log(data);
         setError(data.message || "Login failed");
         setLoading(false);
       }
