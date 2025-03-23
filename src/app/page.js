@@ -18,6 +18,7 @@ export default function Home() {
       e.preventDefault();
       setError(null);
       setLoading(true);
+      console.log(process.env.NEXT_PUBLIC_BASE_URL);
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/Asite/login`,
         {
