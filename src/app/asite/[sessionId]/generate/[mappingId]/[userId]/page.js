@@ -37,7 +37,7 @@ export default function Final({ params }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
     try {
-      const content = `${process.env.NEXT_PUBLIC_BASE_URL}${endpoint}`;
+      const content = `${process.env.BASE_URL}${endpoint}`;
       await navigator.clipboard.writeText(content);
       setCopied(true);
       console.log(unwrappedParams);
@@ -49,7 +49,7 @@ export default function Final({ params }) {
   const [handled, setHandled] = useState(false);
   const handleEndpoint = async () => {
     try {
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/Asite/generate-endpoint`, {
+      fetch(`${process.env.BASE_URL}/api/Asite/generate-endpoint`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -73,7 +73,7 @@ export default function Final({ params }) {
       <FormControl fullWidth variant="outlined" margin="normal">
         <Stack direction="row" spacing={1} alignItems="center">
           <Typography sx={{ alignItems: "center", paddingTop: 2 }}>
-            {process.env.NEXT_PUBLIC_BASE_URL}
+            {process.env.BASE_URL}
           </Typography>
           <TextField
             id="standard-basic"

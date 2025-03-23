@@ -18,9 +18,9 @@ export default function Home() {
       e.preventDefault();
       setError(null);
       setLoading(true);
-      console.log(process.env.NEXT_PUBLIC_BASE_URL);
+      console.log(process.env.BASE_URL);
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/Asite/login`,
+        `${process.env.BASE_URL}/api/Asite/login`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

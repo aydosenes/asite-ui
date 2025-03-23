@@ -70,7 +70,7 @@ export default function Asite({ params }) {
     setWorkspaceId(workspaceId);
     const aSessionID = decodeURIComponent(unwrappedParams.sessionId);
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/Asite/form-types`,
+      `${process.env.BASE_URL}/api/Asite/form-types`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,7 +101,7 @@ export default function Asite({ params }) {
 
     const aSessionID = decodeURIComponent(unwrappedParams.sessionId);
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/Asite/form-summary`,
+      `${process.env.BASE_URL}/api/Asite/form-summary`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,7 +127,7 @@ export default function Asite({ params }) {
 
     const aSessionID = decodeURIComponent(unwrappedParams.sessionId);
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/Asite/form-details`,
+      `${process.env.BASE_URL}/api/Asite/form-details`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -219,7 +219,7 @@ export default function Asite({ params }) {
   useEffect(() => {
     if (workspaceId) {
       const aSessionID = decodeURIComponent(unwrappedParams.sessionId);
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/Asite/folders`, {
+      fetch(`${process.env.BASE_URL}/api/Asite/folders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ aSessionID, workspaceId }),
@@ -237,7 +237,7 @@ export default function Asite({ params }) {
     console.log("xxxxxxxx");
     if (workspaceList.length == 0) {
       const aSessionID = decodeURIComponent(unwrappedParams.sessionId);
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/Asite/workspaces`, {
+      fetch(`${process.env.BASE_URL}/api/Asite/workspaces`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ aSessionID }),
@@ -254,7 +254,7 @@ export default function Asite({ params }) {
   useEffect(() => {
     if (formId) {
       const aSessionID = decodeURIComponent(unwrappedParams.sessionId);
-      fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/Asite/form-attachments`, {
+      fetch(`${process.env.BASE_URL}/api/Asite/form-attachments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ aSessionID, workspaceId, formId }),
@@ -290,7 +290,7 @@ export default function Asite({ params }) {
     formData.append("FileName", fileName);
     formData.append("FileType", fileType);
     formData.append("MappingItems", JSON.stringify(mappedData));
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/Asite/mapping`, {
+    const response = await fetch(`${process.env.BASE_URL}/api/Asite/mapping`, {
       method: "POST",
       body: formData,
     });
