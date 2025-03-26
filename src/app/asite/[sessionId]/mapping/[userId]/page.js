@@ -22,13 +22,14 @@ import {
   Grid2,
   Checkbox,
   FormControlLabel,
+  TextField,
+  Box,
 } from "@mui/material";
 import { use } from "react";
 import * as XLSX from "xlsx";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import DeleteIcon from "@mui/icons-material/Delete";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
 export default function Asite({ params }) {
   const unwrappedParams = use(params);
@@ -37,33 +38,27 @@ export default function Asite({ params }) {
   const [formGroupList, setFormGroupList] = useState([]);
   const [formGroup, setFormGroup] = useState("");
   const [formTypeList, setFormTypeList] = useState([]);
-  const [formTypeId, setFormTypeId] = useState("");
-  const [formList, setFormList] = useState([]);
-  const [formId, setFormId] = useState("");
-  const [attachments, setAttachments] = useState([]);
+  const [appBuilderId, setAppBuilderId] = useState("");
   const [fileExcel, setFile] = useState(null);
   const [insertAttachments, setInsertAttachments] = useState(false);
   const [fileName, setFileName] = useState("");
   const [fileType, setFileType] = useState("");
-  const [fieldList, setFieldDic] = useState(null);
+  const [fieldList, setFieldList] = useState(null);
   const [fieldListExcel, setFieldListExcel] = useState([]);
-  const [selectedItemKey, setSelectedItemKey] = useState("");
-  const [selectedItemValue, setSelectedItemValue] = useState("");
+  const [selectedItemField, setSelectedItemField] = useState("");
   const [selectedItemExcel, setSelectedItemExcel] = useState("");
-
   const [mappedData, setMappedData] = useState([]);
-
   const [folders, setFolders] = useState([]);
   const [selectedAttachmentFolder, setSelectedAttachmentFolder] =
     useState(null);
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [open, setOpen] = useState(false);
   const [openForAtt, setOpenForAtt] = useState(false);
-
   const [createdMappingId, setCreatedMappingId] = useState("");
-  const [existingMapping, setExistingMapping] = useState("");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  // 1 - workspace secilir ve form type groups getirilir.
   const handleWorkspace = async (e) => {
     let workspaceId = e.target.value;
     e.preventDefault();
@@ -87,6 +82,7 @@ export default function Asite({ params }) {
     }
   };
 
+  // 2 - form type group secilir
   const handleFormGroup = async (e) => {
     let formGroup = e.target.value;
     e.preventDefault();
@@ -94,25 +90,30 @@ export default function Asite({ params }) {
     setFormTypeList(formGroup.formTypes);
   };
 
+  // 3 - group icerisinden form type secilir ve AppBuilderCode ile form template'e ait fields getirilir.
   const handleFormType = async (e) => {
-    let formTypeId = e.target.value;
+    let appBuilderID = e.target.value;
     e.preventDefault();
-    setFormTypeId(formTypeId);
+    setAppBuilderId(appBuilderID);
 
     const aSessionID = decodeURIComponent(unwrappedParams.sessionId);
     const response = await fetch(
-      `${process.env.BASE_URL}/api/Asite/form-summary`,
+      `${process.env.BASE_URL}/api/Asite/form-template`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aSessionID, workspaceId, formTypeId }),
+        body: JSON.stringify({
+          aSessionID,
+          workspaceId,
+          appBuilderCode: appBuilderID,
+        }),
       }
     );
     if (response.ok) {
       const data = await response.json();
       console.log(data);
-      if (data.firstPage) {
-        setFormList(data.firstPage);
+      if (data.fieldList.length > 0) {
+        setFieldList(data.fieldList);
       }
     } else {
       const data = await response.json();
@@ -120,37 +121,17 @@ export default function Asite({ params }) {
     }
   };
 
-  const handleForm = async (e) => {
-    let formId = e.target.value;
-    e.preventDefault();
-    setFormId(formId);
-
-    const aSessionID = decodeURIComponent(unwrappedParams.sessionId);
-    const response = await fetch(
-      `${process.env.BASE_URL}/api/Asite/form-details`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aSessionID, workspaceId, formId }),
-      }
-    );
-    const details = await response.json();
-    console.log(details);
-    setFieldDic(details.fieldList);
-  };
-
-  const handleInputChange = (key, value) => {
-    setSelectedItemKey(key);
-    setSelectedItemValue(value);
+  const handleInputChange = (value) => {
     console.log(value);
+    setSelectedItemField(value);
   };
 
-  const handleDelete = (key, value, to) => {
-    setMappedData((prevData) => prevData.filter((item) => item.key !== key));
+  const handleDelete = (value, to) => {
+    setMappedData((prevData) =>
+      prevData.filter((item) => item.value !== value)
+    );
     setFieldListExcel((prevData) => [...prevData, to]);
-    const updatedFieldDic = { ...fieldList };
-    updatedFieldDic[key] = value;
-    setFieldDic(updatedFieldDic);
+    setFieldList((prevData) => [...prevData, value]);
   };
 
   const handleFileUpload = (event) => {
@@ -177,44 +158,38 @@ export default function Asite({ params }) {
 
   const handleMap = async (e) => {
     e.preventDefault();
-    const updatedFieldDic = { ...fieldList };
-    delete updatedFieldDic[selectedItemKey];
-    setFieldDic(updatedFieldDic);
+    const updatedFields = fieldList.filter(
+      (item) => item !== selectedItemField
+    );
+    setFieldList(updatedFields);
     const updatedItems = fieldListExcel.filter(
       (item) => item !== selectedItemExcel
     );
     setFieldListExcel(updatedItems);
-    setSelectedItemKey("");
-    setSelectedItemValue("");
+    setSelectedItemField("");
     setSelectedItemExcel("");
-
     setMappedData((prev) => [
       ...prev,
-      { key: selectedItemKey, value: selectedItemValue, to: selectedItemExcel },
+      { value: selectedItemField, to: selectedItemExcel },
     ]);
   };
 
-  const handleInsertAttachments = async (mappingId) => {
-    const aSessionID = decodeURIComponent(unwrappedParams.sessionId);
-    fetch(`https://localhost:44305/api/Asite/upload-form-attachment`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        aSessionID,
-        workspaceId: workspaceId,
-        folderId: getStaticId(selectedAttachmentFolder.id),
-        mappingId: mappingId,
-        attachments,
-      }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data) {
-          console.log(data);
-        }
+  useEffect(() => {
+    if (workspaceList.length == 0) {
+      const aSessionID = decodeURIComponent(unwrappedParams.sessionId);
+      fetch(`${process.env.BASE_URL}/api/Asite/workspaces`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aSessionID }),
       })
-      .catch((error) => console.log(error));
-  };
+        .then((response) => response.json())
+        .then((data) => {
+          setWorkspaceList(data.workspaces);
+          console.log(data);
+        })
+        .catch((error) => router.push("/"));
+    }
+  }, []);
 
   useEffect(() => {
     if (workspaceId) {
@@ -233,43 +208,6 @@ export default function Asite({ params }) {
     }
   }, [workspaceId]);
 
-  useEffect(() => {
-    console.log("xxxxxxxx");
-    if (workspaceList.length == 0) {
-      const aSessionID = decodeURIComponent(unwrappedParams.sessionId);
-      fetch(`${process.env.BASE_URL}/api/Asite/workspaces`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aSessionID }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          setWorkspaceList(data.workspaces);
-          console.log(data);
-        })
-        .catch((error) => router.push("/"));
-    }
-  }, []);
-
-  useEffect(() => {
-    if (formId) {
-      const aSessionID = decodeURIComponent(unwrappedParams.sessionId);
-      fetch(`${process.env.BASE_URL}/api/Asite/form-attachments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aSessionID, workspaceId, formId }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data) {
-            setAttachments(data.attachments);
-            console.log(data);
-          }
-        })
-        .catch((error) => console.log(error));
-    }
-  }, [formId]);
-
   const handleSelect = (folderId, folderName) => {
     setSelectedFolder({ id: folderId, name: folderName });
   };
@@ -283,24 +221,38 @@ export default function Asite({ params }) {
     const formData = new FormData();
     formData.append("ASessionID", aSessionID);
     formData.append("WorkspaceId", getStaticId(workspaceId));
-    formData.append("FormId", getStaticId(formId));
     formData.append("FolderId", getStaticId(selectedFolder.id));
+    formData.append("InsertAttachments", insertAttachments);
     formData.append("UserId", unwrappedParams.userId);
     formData.append("File", fileExcel);
     formData.append("FileName", fileName);
     formData.append("FileType", fileType);
-    formData.append("MappingItems", JSON.stringify(mappedData));
+    const convertedData = mappedData.map(item => ({
+      ...item,
+      to: item.to?.Ref ?? ""
+    }));
+    formData.append("MappingItems", JSON.stringify(convertedData));
+    if (insertAttachments) {
+      formData.append(
+        "AttachmentFolderId",
+        getStaticId(selectedAttachmentFolder.id)
+      );
+    }
+    formData.append("Revision", revision);
+    formData.append("PurposeOfIssue", purpose);
+    formData.append("Status", status);
+    formData.append("RevisionNotes", revisionNotes);
+    formData.append("PublishAsPrivate", publishAsPrivate);
     const response = await fetch(`${process.env.BASE_URL}/api/Asite/mapping`, {
       method: "POST",
       body: formData,
     });
     const result = await response.json();
     setCreatedMappingId(result);
-    if (insertAttachments) {
-      handleInsertAttachments(result);
-    }
     router.push(
-      `/asite/${decodeURIComponent(unwrappedParams.sessionId)}/generate/${result}/${unwrappedParams.userId}`
+      `/asite/${decodeURIComponent(
+        unwrappedParams.sessionId
+      )}/generate/${result}/${unwrappedParams.userId}`
     );
   };
 
@@ -337,8 +289,84 @@ export default function Asite({ params }) {
     return value.split("$$")[0];
   }
 
+  const [revision, setRevision] = useState("");
+  const [purpose, setPurpose] = useState("");
+  const [status, setStatus] = useState("");
+  const [revisionNotes, setRevisionNotes] = useState("");
+  const [publishAsPrivate, setPublishAsPrivate] = useState(false);
+
   return (
-    <Container maxWidth="md">
+    <Container maxWidth="md" sx={{ pb: 20 }}>
+      <FormControl fullWidth variant="outlined" margin="normal">
+        <Box display="flex" gap={1} flexWrap="wrap" sx={{ mt: 1 }}>
+          <TextField
+            label="Doc. Ref."
+            variant="outlined"
+            size="small"
+            sx={{ flex: 1 }}
+            disabled
+          />
+          <TextField
+            label="Revision"
+            variant="outlined"
+            size="small"
+            sx={{ flex: 1 }}
+            value={revision}
+            onChange={(e) => {
+              setRevision(e.target.value);
+            }}
+          />
+          <TextField
+            label="Doc. Title"
+            variant="outlined"
+            size="small"
+            sx={{ flex: 1 }}
+            disabled
+          />
+          <TextField
+            label="Purpose Of Issue"
+            variant="outlined"
+            size="small"
+            sx={{ flex: 1 }}
+            value={purpose}
+            onChange={(e) => {
+              setPurpose(e.target.value);
+            }}
+          />
+          <TextField
+            label="Status"
+            variant="outlined"
+            size="small"
+            sx={{ flex: 1 }}
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+            }}
+          />
+          <TextField
+            label="Revision Notes"
+            variant="outlined"
+            size="small"
+            sx={{ flex: 1 }}
+            value={revisionNotes}
+            onChange={(e) => {
+              setRevisionNotes(e.target.value);
+            }}
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                size="small"
+                checked={publishAsPrivate}
+                onChange={(e) => {
+                  setPublishAsPrivate(e.target.checked);
+                }}
+              />
+            }
+            label="Private"
+          />
+        </Box>
+      </FormControl>
       <FormControl fullWidth variant="outlined" margin="normal">
         <InputLabel id="select-label-1">Select A Workspace</InputLabel>
         <Select
@@ -379,31 +407,13 @@ export default function Asite({ params }) {
           <Select
             id="select-3"
             labelId="select-label-3"
-            value={formTypeId}
+            value={appBuilderId}
             onChange={handleFormType}
             label="Select A Form Type"
           >
             {formTypeList.map((item, index) => (
-              <MenuItem key={index} value={item.formTypeID}>
+              <MenuItem key={index} value={item.appBuilderID}>
                 {item.formName}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      )}
-      {formTypeId && (
-        <FormControl fullWidth variant="outlined" margin="normal">
-          <InputLabel id="select-label-3">Select A Form</InputLabel>
-          <Select
-            id="select-3"
-            labelId="select-label-3"
-            value={formId}
-            onChange={handleForm}
-            label="Select A Form"
-          >
-            {formList.map((item, index) => (
-              <MenuItem key={index} value={item.formId}>
-                {item.formVO.formCode} - {item.formVO.formName}
               </MenuItem>
             ))}
           </Select>
@@ -450,9 +460,16 @@ export default function Asite({ params }) {
             fullWidth
             maxWidth="sm"
           >
-            <DialogTitle>Select a Folder</DialogTitle>
+            <DialogTitle>Hedef Dosyayı Seçiniz</DialogTitle>
             <DialogContent>
-              <SimpleTreeView>{renderTreeAttachments(folders)}</SimpleTreeView>
+              {folders.length > 0 ? (
+                <SimpleTreeView>
+                  {renderTreeAttachments(folders)}
+                </SimpleTreeView>
+              ) : (
+                "Yükleniyor . . ."
+              )}
+
               <Button
                 type="submit"
                 variant="contained"
@@ -461,7 +478,7 @@ export default function Asite({ params }) {
                 disabled={!selectedAttachmentFolder}
                 sx={{ float: "right", marginTop: 2 }}
               >
-                Select
+                Onayla
               </Button>
             </DialogContent>
           </Dialog>
@@ -480,13 +497,13 @@ export default function Asite({ params }) {
                 }}
               >
                 <List>
-                  {Object.entries(fieldList).map(([key, value]) => (
-                    <ListItem key={key} disablePadding>
+                  {fieldList.map((field, index) => (
+                    <ListItem key={index} disablePadding>
                       <ListItemButton
-                        selected={selectedItemKey === key}
-                        onClick={() => handleInputChange(key, value)}
+                        selected={selectedItemField === field}
+                        onClick={() => handleInputChange(field)}
                       >
-                        <ListItemText primary={key} />
+                        <ListItemText primary={field} />
                       </ListItemButton>
                     </ListItem>
                   ))}
@@ -498,7 +515,7 @@ export default function Asite({ params }) {
               variant="contained"
               color="primary"
               onClick={handleMap}
-              disabled={!selectedItemKey || !selectedItemExcel}
+              disabled={!selectedItemField || !selectedItemExcel}
             >
               MAP
             </Button>
@@ -550,9 +567,13 @@ export default function Asite({ params }) {
             fullWidth
             maxWidth="sm"
           >
-            <DialogTitle>Select a Folder</DialogTitle>
+            <DialogTitle>Hedef Dosyayı Seçiniz</DialogTitle>
             <DialogContent>
-              <SimpleTreeView>{renderTree(folders)}</SimpleTreeView>
+              {folders.length > 0 ? (
+                <SimpleTreeView>{renderTree(folders)}</SimpleTreeView>
+              ) : (
+                "Yükleniyor . . ."
+              )}
               <Button
                 type="submit"
                 variant="contained"
@@ -581,24 +602,20 @@ export default function Asite({ params }) {
                 }}
               >
                 <List>
-                  {mappedData.map((obj) => (
-                    <ListItem
-                      key={obj.key}
-                      disablePadding
-                      sx={{ width: "95%" }}
-                    >
+                  {mappedData.map((obj, index) => (
+                    <ListItem key={index} disablePadding sx={{ width: "95%" }}>
                       <ListItemButton
-                        selected={selectedItemKey === obj.key}
-                        onClick={() => handleInputChange(obj.key, obj.value)}
+                        selected={selectedItemField === obj.value}
+                        onClick={() => handleInputChange(obj.value)}
                       >
                         <ListItemText
-                          primary={`${obj.key} (${obj.value}) => ${obj.to.Name}`}
+                          primary={`${obj.value} => ${obj.to.Name}`}
                         />
                       </ListItemButton>
                       <IconButton
                         edge="end"
                         aria-label="delete"
-                        onClick={() => handleDelete(obj.key, obj.value, obj.to)}
+                        onClick={() => handleDelete(obj.value, obj.to)}
                       >
                         <DeleteIcon />
                       </IconButton>
@@ -607,20 +624,25 @@ export default function Asite({ params }) {
                 </List>
               </Paper>
             </Grid2>
-            <Grid2 item size={12}>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                onClick={() => handleSaveMapping()}
-                disabled={!selectedFolder || loading}
-              >
-                {`Save Mapping`}
-              </Button>
-            </Grid2>
           </Grid2>
         </div>
       )}
+      <FormControl
+        width="80%"
+        variant="outlined"
+        margin="normal"
+        sx={{ float: "right" }}
+      >
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          onClick={() => handleSaveMapping()}
+          disabled={!selectedFolder || loading}
+        >
+          {`Save Mapping`}
+        </Button>
+      </FormControl>
     </Container>
   );
 }
