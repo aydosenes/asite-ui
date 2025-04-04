@@ -40,7 +40,6 @@ export default function Asite({ params }) {
   const [formTypeList, setFormTypeList] = useState([]);
   const [appBuilderId, setAppBuilderId] = useState("");
   const [fileExcel, setFile] = useState(null);
-  const [insertAttachments, setInsertAttachments] = useState(false);
   const [fileName, setFileName] = useState("");
   const [fileType, setFileType] = useState("");
   const [fieldList, setFieldList] = useState(null);
@@ -49,12 +48,8 @@ export default function Asite({ params }) {
   const [selectedItemExcel, setSelectedItemExcel] = useState("");
   const [mappedData, setMappedData] = useState([]);
   const [folders, setFolders] = useState([]);
-  const [selectedAttachmentFolder, setSelectedAttachmentFolder] =
-    useState(null);
   const [selectedFolder, setSelectedFolder] = useState(null);
   const [open, setOpen] = useState(false);
-  const [openForAtt, setOpenForAtt] = useState(false);
-  const [createdMappingId, setCreatedMappingId] = useState("");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -211,9 +206,6 @@ export default function Asite({ params }) {
   const handleSelect = (folderId, folderName) => {
     setSelectedFolder({ id: folderId, name: folderName });
   };
-  const handleSelectAttachements = (folderId, folderName) => {
-    setSelectedAttachmentFolder({ id: folderId, name: folderName });
-  };
 
   const handleSaveMapping = async () => {
     setLoading(true);
@@ -222,7 +214,6 @@ export default function Asite({ params }) {
     formData.append("ASessionID", aSessionID);
     formData.append("WorkspaceId", getStaticId(workspaceId));
     formData.append("FolderId", getStaticId(selectedFolder.id));
-    formData.append("InsertAttachments", insertAttachments);
     formData.append("UserId", unwrappedParams.userId);
     formData.append("File", fileExcel);
     formData.append("FileName", fileName);
@@ -231,13 +222,7 @@ export default function Asite({ params }) {
       ...item,
       to: item.to?.Ref ?? ""
     }));
-    formData.append("MappingItems", JSON.stringify(convertedData));
-    if (insertAttachments) {
-      formData.append(
-        "AttachmentFolderId",
-        getStaticId(selectedAttachmentFolder.id)
-      );
-    }
+    formData.append("MappingItems", JSON.stringify(convertedData));    
     formData.append("Revision", revision);
     formData.append("PurposeOfIssue", purpose);
     formData.append("Status", status);
@@ -248,7 +233,6 @@ export default function Asite({ params }) {
       body: formData,
     });
     const result = await response.json();
-    setCreatedMappingId(result);
     router.push(
       `/asite/${decodeURIComponent(
         unwrappedParams.sessionId
@@ -265,22 +249,6 @@ export default function Asite({ params }) {
         onClick={() => handleSelect(folder.folderId, folder.folderName)}
       >
         {folder.subFolders.length > 0 && renderTree(folder.subFolders)}
-      </TreeItem>
-    ));
-  };
-
-  const renderTreeAttachments = (nodes) => {
-    return nodes.map((folder) => (
-      <TreeItem
-        key={`attachment-folder-${folder.folderId}`}
-        itemId={folder.folderId}
-        label={folder.folderName}
-        onClick={() =>
-          handleSelectAttachements(folder.folderId, folder.folderName)
-        }
-      >
-        {folder.subFolders.length > 0 &&
-          renderTreeAttachments(folder.subFolders)}
       </TreeItem>
     ));
   };
@@ -429,61 +397,6 @@ export default function Asite({ params }) {
           />
         </FormControl>
       )}
-      {fileExcel && (
-        <FormControl fullWidth variant="outlined" margin="normal">
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={insertAttachments}
-                onChange={() => setInsertAttachments(!insertAttachments)}
-              />
-            }
-            label="Insert Attachments"
-          />
-        </FormControl>
-      )}
-      {folders && insertAttachments && (
-        <FormControl fullWidth variant="outlined" margin="normal">
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            onClick={() => setOpenForAtt(true)}
-          >
-            {!selectedAttachmentFolder
-              ? `Select Attachment Upload Folder`
-              : `Selected Folder: ${selectedAttachmentFolder.name}`}
-          </Button>
-          <Dialog
-            open={openForAtt}
-            onClose={() => setOpenForAtt(false)}
-            fullWidth
-            maxWidth="sm"
-          >
-            <DialogTitle>Hedef Dosyayı Seçiniz</DialogTitle>
-            <DialogContent>
-              {folders.length > 0 ? (
-                <SimpleTreeView>
-                  {renderTreeAttachments(folders)}
-                </SimpleTreeView>
-              ) : (
-                "Yükleniyor . . ."
-              )}
-
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                onClick={() => setOpenForAtt(false)}
-                disabled={!selectedAttachmentFolder}
-                sx={{ float: "right", marginTop: 2 }}
-              >
-                Onayla
-              </Button>
-            </DialogContent>
-          </Dialog>
-        </FormControl>
-      )}
       {fieldList && fieldListExcel.length > 0 && (
         <div style={{ marginTop: 10, marginBottom: 10 }}>
           <Grid2 container spacing={1}>
@@ -497,7 +410,7 @@ export default function Asite({ params }) {
                 }}
               >
                 <List>
-                  {fieldList.map((field, index) => (
+                  {[...fieldList].sort((a, b) => a.localeCompare(b)).map((field, index) => (
                     <ListItem key={index} disablePadding>
                       <ListItemButton
                         selected={selectedItemField === field}
