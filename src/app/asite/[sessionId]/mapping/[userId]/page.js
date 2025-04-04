@@ -231,7 +231,6 @@ export default function Asite({ params }) {
     const response = await fetch(`${process.env.BASE_URL}/api/Asite/mapping`, {
       method: "POST",
       body: formData,
-      mode: "no-cors",
     });
     const result = await response.json();
     router.push(
