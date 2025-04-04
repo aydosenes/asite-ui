@@ -61,6 +61,7 @@ export default function Final({ params }) {
           url: endpoint,
           mappingId: unwrappedParams.mappingId,
         }),
+        mode: "no-cors",
       })
         .then((response) => response.json())
         .then((data) => {

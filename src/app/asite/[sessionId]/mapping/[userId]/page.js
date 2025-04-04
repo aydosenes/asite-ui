@@ -65,6 +65,7 @@ export default function Asite({ params }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ aSessionID, workspaceId }),
+        mode: "no-cors",
       }
     );
     if (response.ok) {
@@ -102,6 +103,7 @@ export default function Asite({ params }) {
           workspaceId,
           appBuilderCode: appBuilderID,
         }),
+        mode: "no-cors",
       }
     );
     if (response.ok) {
@@ -176,6 +178,7 @@ export default function Asite({ params }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ aSessionID }),
+        mode: "no-cors",
       })
         .then((response) => response.json())
         .then((data) => {
@@ -193,6 +196,7 @@ export default function Asite({ params }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ aSessionID, workspaceId }),
+        mode: "no-cors",
       })
         .then((response) => response.json())
         .then((data) => {
@@ -218,11 +222,11 @@ export default function Asite({ params }) {
     formData.append("File", fileExcel);
     formData.append("FileName", fileName);
     formData.append("FileType", fileType);
-    const convertedData = mappedData.map(item => ({
+    const convertedData = mappedData.map((item) => ({
       ...item,
-      to: item.to?.Ref ?? ""
+      to: item.to?.Ref ?? "",
     }));
-    formData.append("MappingItems", JSON.stringify(convertedData));    
+    formData.append("MappingItems", JSON.stringify(convertedData));
     formData.append("Revision", revision);
     formData.append("PurposeOfIssue", purpose);
     formData.append("Status", status);
@@ -231,7 +235,7 @@ export default function Asite({ params }) {
     const response = await fetch(`${process.env.BASE_URL}/api/Asite/mapping`, {
       method: "POST",
       body: formData,
-      mode: "no-cors"
+      mode: "no-cors",
     });
     const result = await response.json();
     router.push(
@@ -411,16 +415,18 @@ export default function Asite({ params }) {
                 }}
               >
                 <List>
-                  {[...fieldList].sort((a, b) => a.localeCompare(b)).map((field, index) => (
-                    <ListItem key={index} disablePadding>
-                      <ListItemButton
-                        selected={selectedItemField === field}
-                        onClick={() => handleInputChange(field)}
-                      >
-                        <ListItemText primary={field} />
-                      </ListItemButton>
-                    </ListItem>
-                  ))}
+                  {[...fieldList]
+                    .sort((a, b) => a.localeCompare(b))
+                    .map((field, index) => (
+                      <ListItem key={index} disablePadding>
+                        <ListItemButton
+                          selected={selectedItemField === field}
+                          onClick={() => handleInputChange(field)}
+                        >
+                          <ListItemText primary={field} />
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
                 </List>
               </Paper>
             </Grid2>
