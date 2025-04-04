@@ -65,7 +65,6 @@ export default function Asite({ params }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ aSessionID, workspaceId }),
-        mode: "no-cors",
       }
     );
     if (response.ok) {
@@ -103,7 +102,6 @@ export default function Asite({ params }) {
           workspaceId,
           appBuilderCode: appBuilderID,
         }),
-        mode: "no-cors",
       }
     );
     if (response.ok) {
@@ -178,7 +176,6 @@ export default function Asite({ params }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ aSessionID }),
-        mode: "no-cors",
       })
         .then((response) => response.json())
         .then((data) => {
@@ -196,7 +193,6 @@ export default function Asite({ params }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ aSessionID, workspaceId }),
-        mode: "no-cors",
       })
         .then((response) => response.json())
         .then((data) => {
