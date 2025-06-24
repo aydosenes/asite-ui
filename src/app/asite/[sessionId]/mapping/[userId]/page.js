@@ -34,7 +34,9 @@ import DeleteIcon from "@mui/icons-material/Delete";
 export default function Asite({ params }) {
   const unwrappedParams = use(params);
   const [workspaceList, setWorkspaceList] = useState([]);
+  const [selectedWorkspace, setSelectedWorkspace] = useState(null);
   const [workspaceId, setWorkspaceId] = useState("");
+  const [projectName, setProjectName] = useState("");
   const [formGroupList, setFormGroupList] = useState([]);
   const [formGroup, setFormGroup] = useState("");
   const [formTypeList, setFormTypeList] = useState([]);
@@ -55,9 +57,12 @@ export default function Asite({ params }) {
 
   // 1 - workspace secilir ve form type groups getirilir.
   const handleWorkspace = async (e) => {
-    let workspaceId = e.target.value;
+    const { id, name } = JSON.parse(e.target.value);
+    setSelectedWorkspace({ id, name });
+    let workspaceId = id;
     e.preventDefault();
     setWorkspaceId(workspaceId);
+    setProjectName(name);
     const aSessionID = decodeURIComponent(unwrappedParams.sessionId);
     const response = await fetch(
       `${process.env.BASE_URL}/api/Asite/form-types`,
@@ -213,6 +218,7 @@ export default function Asite({ params }) {
     const formData = new FormData();
     formData.append("ASessionID", aSessionID);
     formData.append("WorkspaceId", getStaticId(workspaceId));
+    formData.append("ProjectName", projectName);
     formData.append("FolderId", getStaticId(selectedFolder.id));
     formData.append("UserId", unwrappedParams.userId);
     formData.append("File", fileExcel);
@@ -340,12 +346,12 @@ export default function Asite({ params }) {
         <Select
           id="select-1"
           labelId="select-label-1"
-          value={workspaceId}
+          value={selectedWorkspace ? JSON.stringify(selectedWorkspace) : ""}
           onChange={handleWorkspace}
           label="Select A Workspace"
         >
           {workspaceList.map((item, index) => (
-            <MenuItem key={index} value={item.workspaceId}>
+            <MenuItem key={index} value={JSON.stringify({ id: item.workspaceId, name: item.workspaceName })}>
               {item.workspaceName}
             </MenuItem>
           ))}
