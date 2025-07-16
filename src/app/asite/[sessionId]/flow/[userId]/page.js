@@ -15,6 +15,7 @@ import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import DownloadIcon from "@mui/icons-material/Download";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { Button } from "@mui/material";
@@ -22,6 +23,33 @@ import { usePathname, useRouter } from "next/navigation";
 
 function Row({ row, onDelete }) {
   const [open, setOpen] = useState(false);
+
+  const handleDownload = async (flowId) => {
+    const requestId = "";
+    const loginSessionId = "00000000-0000-0000-0000-000000000000";
+    const url = `${process.env.BASE_URL}/api/ESignature/download-signed-file?flowId=${flowId}`;
+
+    try {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("Dosya indirilemedi");
+      }
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `signed-${flowId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("İndirme hatası:", error);
+    }
+  };
 
   return (
     <React.Fragment>
@@ -37,6 +65,15 @@ function Row({ row, onDelete }) {
         </TableCell>
         <TableCell>{row.flowId}</TableCell>
         <TableCell>{row.statusString}</TableCell>
+        <TableCell>
+          <IconButton
+            aria-label="expand row"
+            size="small"
+            onClick={() => handleDownload(row.flowId)}
+          >
+            {row.statusString === "Finished" && <DownloadIcon color="info"/>}
+          </IconButton>
+        </TableCell>
         <TableCell>
           <IconButton
             aria-label="delete"
@@ -155,7 +192,7 @@ export default function CollapsibleTable({ params }) {
         <Table aria-label="collapsible table">
           <TableHead>
             <TableRow>
-              <TableCell>                
+              <TableCell>
                 <Button
                   variant="text"
                   size="small"
