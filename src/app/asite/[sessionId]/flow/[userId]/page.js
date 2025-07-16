@@ -205,6 +205,7 @@ export default function CollapsibleTable({ params }) {
               </TableCell>
               <TableCell>Süreç ID</TableCell>
               <TableCell>Durum</TableCell>
+              <TableCell>İndir</TableCell>
               <TableCell>Sil</TableCell>
             </TableRow>
           </TableHead>
