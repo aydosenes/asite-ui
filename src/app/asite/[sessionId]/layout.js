@@ -33,6 +33,11 @@ export default function DashboardLayout({ children }) {
     router.push(newUrl);
   };
 
+  const handleCraneFormTemplate = () => {
+    const newUrl = `/asite/${sessionId}/crane/${userId}`;
+    router.push(newUrl);
+  };
+
   const toggleDrawer = (newOpen) => () => {
     setOpen(newOpen);
   };
@@ -56,6 +61,19 @@ export default function DashboardLayout({ children }) {
         {["E-Signature"].map((text, index) => (
           <ListItem key={text} disablePadding>
             <ListItemButton onClick={handleEsignature}>
+              <ListItemIcon>
+                {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+              </ListItemIcon>
+              <ListItemText primary={text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider />
+      <List>
+        {["Crane Form Template"].map((text, index) => (
+          <ListItem key={text} disablePadding>
+            <ListItemButton onClick={handleCraneFormTemplate}>
               <ListItemIcon>
                 {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
               </ListItemIcon>
