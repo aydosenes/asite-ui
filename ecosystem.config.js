@@ -3,11 +3,12 @@ module.exports = {
     {
       name: "asite-ui",
       script: "npm",
-      args: "run start",
+      args: "start",
       cwd: "C:\\Users\\Administrator\\Desktop\\publish-2\\asite-ui",
-      interpreter: "cmd.exe",
       env: {
         NODE_ENV: "production",
+        PORT: 3002,
+        HOST: "0.0.0.0",
       },
     },
   ],
