@@ -67,6 +67,7 @@ export default function Asite({ params }) {
 
   const handleSetSourceProject = async (e) => {
     setSourceProject(e.target.value);
+    setTargetProject("");
     handleGetSiteSets(e.target.value);
   };
 
@@ -84,6 +85,7 @@ export default function Asite({ params }) {
         .then((response) => response.json())
         .then((data) => {
           setTargetProject(data.data);
+          setImportCompleted(false);
           setLoading(false);
         })
         .catch((error) => console.log(error));
@@ -107,6 +109,7 @@ export default function Asite({ params }) {
         .then((response) => response.json())
         .then((data) => {
           setSiteSets(data);
+          setImportCompleted(false);
           setLoading(false);
         })
         .catch((error) => console.log(error));
@@ -120,7 +123,6 @@ export default function Asite({ params }) {
     const newSiteSets = [...siteSets];
     newSiteSets[index].excelFile = file;
     setSiteSets(newSiteSets);
-    console.log(newSiteSets);
   };
   const handleRemoveExcel = (index) => {
     setSiteSets((prev) =>
@@ -146,7 +148,6 @@ export default function Asite({ params }) {
             }
           );
           const result = await response.json();
-          console.log(result);
           setImportCompleted(true);
         }
       }
@@ -160,7 +161,7 @@ export default function Asite({ params }) {
     try {
       setLoading(true);
       setAllLoading(true);
-      for (const url of urls) {
+      const requests = urls.map((url) =>
         fetch(`${process.env.BASE_URL}/api/Cloner/${url}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -169,15 +170,16 @@ export default function Asite({ params }) {
             targetProjectId: targetProject.id,
             token: token,
           }),
+        }).then((response) => response.json())
+      );
+
+      Promise.all(requests)
+        .then((results) => {
+          console.log(results);
+          setAllLoading(false);
+          setLoading(false);
         })
-          .then((response) => response.json())
-          .then((data) => {
-            console.log(data);
-          })
-          .catch((error) => console.log(error));
-      }
-      setLoading(false);
-      setAllLoading(false);
+        .catch((error) => console.log(error));
     } catch (err) {
       setLoading(false);
       setAllLoading(false);
@@ -211,7 +213,7 @@ export default function Asite({ params }) {
     return (
       <Box sx={{ position: "relative", display: "flex" }}>
         {/* <CircularProgress variant="determinate" {...props} /> */}
-        <CircularProgress size="30px"/>
+        <CircularProgress size="30px" />
         <Box
           sx={{
             top: 0,
@@ -248,7 +250,7 @@ export default function Asite({ params }) {
   return (
     <Container maxWidth="md" sx={{ pb: 20 }}>
       <Typography variant="h6" sx={{ mb: 2 }}>
-        <CircularProgressWithLabel value={progress} />
+        Project Cloner
       </Typography>
       <Box display="flex" gap={1} flexWrap="wrap" sx={{ mt: 1 }}>
         <FormControl margin="normal" sx={{ flex: 1 }}>
@@ -286,7 +288,6 @@ export default function Asite({ params }) {
           </Button>
         </FormControl>
       </Box>
-
       {sourceProject && targetProject && siteSets.length > 0 && (
         <Box display="flex" gap={1} flexWrap="wrap" sx={{ mt: 1 }}>
           <FormControl margin="normal" sx={{ flex: 1 }}>
@@ -294,9 +295,13 @@ export default function Asite({ params }) {
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Site Set Name</TableCell>
-                    <TableCell>File Name</TableCell>
-                    <TableCell>Action</TableCell>
+                    <TableCell>
+                      <Typography fontWeight="bold">Site Set Name</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography fontWeight="bold">File Name</Typography>
+                    </TableCell>
+                    <TableCell></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -369,7 +374,7 @@ export default function Asite({ params }) {
           </FormControl>
         </Box>
       )}
-      {importCompleted && (
+      {importCompleted && siteSets.length > 0 && (
         <Box display="flex" gap={1} flexWrap="wrap" sx={{ mt: 1 }}>
           <FormControl margin="normal" sx={{ flex: 1 }}>
             {allLoading ? (
@@ -381,6 +386,7 @@ export default function Asite({ params }) {
                 color="primary"
                 onClick={() => handleClone()}
                 sx={{ mt: "16px" }}
+                disabled={!siteSets.some((siteSet) => siteSet.excelFile !== undefined)}
               >
                 Clone All Sets
               </Button>
