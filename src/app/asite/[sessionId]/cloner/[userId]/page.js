@@ -157,12 +157,11 @@ export default function Asite({ params }) {
       console.error("Failed to import siteSets:", err);
     }
   };
+
   const handleClone = async () => {
-    try {
-      setLoading(true);
-      setAllLoading(true);
-      const requests = urls.map((url) =>
-        fetch(`${process.env.BASE_URL}/api/Cloner/${url}`, {
+    for (const url of urls) {
+      try {
+        const response = await fetch(`${process.env.BASE_URL}/api/Cloner/${url}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -170,22 +169,51 @@ export default function Asite({ params }) {
             targetProjectId: targetProject.id,
             token: token,
           }),
-        }).then((response) => response.json())
-      );
+        });
 
-      Promise.all(requests)
-        .then((results) => {
-          console.log(results);
-          setAllLoading(false);
-          setLoading(false);
-        })
-        .catch((error) => console.log(error));
-    } catch (err) {
-      setLoading(false);
-      setAllLoading(false);
-      console.error("Failed to clone:", err);
+        const data = await response.json();
+        console.log(`Response from ${url}:`, data);
+      } catch (error) {
+        console.error(`Error in request ${url}:`, error);
+      }
     }
+    setAllLoading(false);
+    setLoading(false);
   };
+
+  // const handleClone = async () => {
+  //   try {
+  //     setLoading(true);
+  //     setAllLoading(true);
+  //     const requests = urls.map((url) =>
+  //       fetch(`${process.env.BASE_URL}/api/Cloner/${url}`, {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({
+  //           sourceProjectId: sourceProject,
+  //           targetProjectId: targetProject.id,
+  //           token: token,
+  //         }),
+  //       })
+  //         .then((response) => response.json())
+  //         .then((data) => {
+  //           console.log(`${data}`);
+  //         })
+  //     );
+
+  //     Promise.all(requests)
+  //       .then((results) => {
+  //         console.log(results);
+  //         setAllLoading(false);
+  //         setLoading(false);
+  //       })
+  //       .catch((error) => console.log(error));
+  //   } catch (err) {
+  //     setLoading(false);
+  //     setAllLoading(false);
+  //     console.error("Failed to clone:", err);
+  //   }
+  // };
 
   const messages = [
     "Revision setting...",
@@ -284,7 +312,7 @@ export default function Asite({ params }) {
             disabled={!projectName || loading}
             sx={{ mt: "16px" }}
           >
-            Create
+            {loading ? <CircularProgress size="30px" color="inherit" /> : "Create"}
           </Button>
         </FormControl>
       </Box>
@@ -369,7 +397,7 @@ export default function Asite({ params }) {
               }
               sx={{ mt: "16px" }}
             >
-              Import
+              {loading ? <CircularProgress size="30px" color="inherit" /> : "Import"}
             </Button>
           </FormControl>
         </Box>
