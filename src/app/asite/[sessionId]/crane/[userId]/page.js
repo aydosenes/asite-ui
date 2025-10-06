@@ -14,12 +14,17 @@ import {
   Alert,
   TextField,
   Box,
+  CircularProgress,
 } from "@mui/material";
 import { use } from "react";
 
 export default function Asite({ params }) {
   const unwrappedParams = use(params);
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [projects, setProjects] = useState([]);
+  const [sourceProject, setSourceProject] = useState("");
+  const [templates, setTemplates] = useState([]);
   const [isSuccess, setIsSuccess] = useState(false);
   const [message, setMessage] = useState("");
   const [formTemplateId, setFormTemplateId] = useState("");
@@ -52,10 +57,22 @@ export default function Asite({ params }) {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("crane-token") || "";
+    if (projects.length == 0) {
+      const token = localStorage.getItem("crane-token") || "";
       if (token) {
-        setToken(token);        
+        setToken(token);
+        fetch(`${process.env.BASE_URL}/api/Cloner/get-projects`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            setProjects(data);
+          })
+          .catch((error) => router.push("/"));
       }
+    }
   }, []);
 
   const handleGetCraneFormData = async () => {
@@ -67,7 +84,7 @@ export default function Asite({ params }) {
         body: JSON.stringify({
           formTemplateId: formTemplateId,
           projectId: projectId,
-          token: token
+          token: token,
         }),
       })
         .then((response) => response.json())
@@ -132,6 +149,38 @@ export default function Asite({ params }) {
     setOpen(false);
   };
 
+  const handleGetTemplates = async (id) => {
+    try {
+      setLoading(true);
+      fetch(`${process.env.BASE_URL}/api/Cloner/get-form-templates`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: id,
+          token: token,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          setTemplates(data);
+          setLoading(false);
+        })
+        .catch((error) => console.log(error));
+    } catch (err) {
+      setLoading(false);
+      console.error("Failed to get data:", err);
+    }
+  };
+
+  const handleSetSourceProject = async (e) => {
+    setSourceProject(e.target.value);
+    setData("");
+    setSubForms("");
+    setFormTemplateId("");
+    setProjectId("");
+    handleGetTemplates(e.target.value);
+  };
+
   return (
     <Container maxWidth="md" sx={{ pb: 20 }}>
       <FormControl fullWidth variant="outlined" margin="normal">
@@ -140,25 +189,51 @@ export default function Asite({ params }) {
         </Typography>
         <Box display="flex" gap={1} flexWrap="wrap" sx={{ mt: 1 }}>
           <TextField
-            label="Form Template ID"
-            variant="outlined"
+            select
+            label="Source Project"
+            value={sourceProject}
+            onChange={handleSetSourceProject}
             size="small"
             sx={{ flex: 1 }}
+          >
+            {projects.map((s) => (
+              <MenuItem key={s.id} value={s.id}>
+                {s.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            label="Source Template"
             value={formTemplateId}
             onChange={(e) => {
               setFormTemplateId(e.target.value);
             }}
-          />
-          <TextField
-            label="Project ID"
-            variant="outlined"
             size="small"
             sx={{ flex: 1 }}
+          >
+            {templates.map((s) => (
+              <MenuItem key={s.id} value={s.id}>
+                {s.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            label="Target Project"
             value={projectId}
             onChange={(e) => {
               setProjectId(e.target.value);
             }}
-          />
+            size="small"
+            sx={{ flex: 1 }}
+          >
+            {projects.map((s) => (
+              <MenuItem key={s.id} value={s.id}>
+                {s.name}
+              </MenuItem>
+            ))}
+          </TextField>
           <Button
             type="submit"
             variant="contained"
@@ -166,7 +241,11 @@ export default function Asite({ params }) {
             onClick={() => handleGetCraneFormData()}
             disabled={!formTemplateId || !projectId || loading}
           >
-            {`Search`}
+            {loading ? (
+              <CircularProgress size="25px" color="inherit" />
+            ) : (
+              "Search"
+            )}
           </Button>
         </Box>
         {data && (
@@ -278,7 +357,11 @@ export default function Asite({ params }) {
               onClick={() => handleCopyFormTemplate()}
               disabled={loading}
             >
-              {`Copy Form Template`}
+              {loading ? (
+                <CircularProgress size="25px" color="inherit" />
+              ) : (
+                `Copy Form Template`
+              )}
             </Button>
 
             <Snackbar
@@ -289,7 +372,7 @@ export default function Asite({ params }) {
             >
               <Alert
                 onClose={handleClose}
-                severity= {isSuccess ? "success" : "error"}
+                severity={isSuccess ? "success" : "error"}
                 sx={{ width: "100%" }}
               >
                 {message}
