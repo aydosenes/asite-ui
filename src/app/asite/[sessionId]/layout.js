@@ -84,6 +84,11 @@ export default function DashboardLayout({ children }) {
         setToken(data.data.access_token);
         localStorage.setItem("crane-user", email);
         localStorage.setItem("crane-token", data.data.access_token);
+        const expirationTime = Date.now() + data.data.expires_in * 1000;
+        localStorage.setItem(
+          "crane-token-expiration",
+          expirationTime.toString()
+        );
       } else {
         const data = await response.json();
         setError(data.message || "Login failed");
@@ -97,6 +102,8 @@ export default function DashboardLayout({ children }) {
     setToken(null);
     localStorage.setItem("crane-user", "");
     localStorage.setItem("crane-token", "");
+    localStorage.setItem("crane-refresh-token", "");
+    localStorage.setItem("crane-token-expiration", "");
     setConfirmLogoutDialog(false);
   };
 
@@ -109,12 +116,44 @@ export default function DashboardLayout({ children }) {
   };
 
   useEffect(() => {
-    const craneToken = localStorage.getItem("crane-token") || "";
-    const craneUser = localStorage.getItem("crane-user") || "";
-    if (craneToken) {
-      setToken(craneToken);
-      setEmail(craneUser);
+    function checkExpiration() {
+      const expirationTimeStr =
+        localStorage.getItem("crane-token-expiration") || "";
+      if (expirationTimeStr) {
+        const expirationTime = Number(expirationTimeStr);
+        const remainingTime = expirationTime - Date.now();
+        if (remainingTime <= 0) {
+          // Süresi dolmuş, temizle
+          localStorage.setItem("crane-user", "");
+          localStorage.setItem("crane-token", "");
+          localStorage.setItem("crane-token-expiration", "");
+          setToken(null);
+          setEmail("");
+        } else {
+          const craneToken = localStorage.getItem("crane-token") || "";
+          const craneUser = localStorage.getItem("crane-user") || "";
+          if (craneToken) {
+            setToken(craneToken);
+            setEmail(craneUser);
+          }
+          // Süre henüz dolmadı, kalan süreyi kullanarak setTimeout ile temizle
+          setTimeout(() => {
+            localStorage.setItem("crane-user", "");
+            localStorage.setItem("crane-token", "");
+            localStorage.setItem("crane-token-expiration", "");
+            setToken(null);
+            setEmail("");
+          }, remainingTime);
+        }
+      }
     }
+    checkExpiration();
+
+    var intervalId = setInterval(checkExpiration, 5000);
+
+    return function cleanup() {
+      clearInterval(intervalId);
+    };
   }, []);
 
   const DrawerList = (
@@ -159,7 +198,7 @@ export default function DashboardLayout({ children }) {
         <List>
           {["Crane Form Template"].map((text, index) => (
             <ListItem key={text} disablePadding>
-              <ListItemButton onClick={handleCraneFormTemplate}>
+              <ListItemButton onClick={handleCraneFormTemplate} disabled={!token}>
                 <ListItemIcon>
                   {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
                 </ListItemIcon>
@@ -172,7 +211,7 @@ export default function DashboardLayout({ children }) {
         <List>
           {["Project Cloner"].map((text, index) => (
             <ListItem key={text} disablePadding>
-              <ListItemButton onClick={handleProjectCloner}>
+              <ListItemButton onClick={handleProjectCloner} disabled={!token}>
                 <ListItemIcon>
                   {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
                 </ListItemIcon>

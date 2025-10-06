@@ -52,10 +52,11 @@ export default function Asite({ params }) {
   };
 
   useEffect(() => {
-    if (data) {
-      //console.log(data);
-    }
-  }, [data]);
+    const token = localStorage.getItem("crane-token") || "";
+      if (token) {
+        setToken(token);        
+      }
+  }, []);
 
   const handleGetCraneFormData = async () => {
     try {
@@ -66,6 +67,7 @@ export default function Asite({ params }) {
         body: JSON.stringify({
           formTemplateId: formTemplateId,
           projectId: projectId,
+          token: token
         }),
       })
         .then((response) => response.json())

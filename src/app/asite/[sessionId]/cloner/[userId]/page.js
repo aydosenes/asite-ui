@@ -124,6 +124,7 @@ export default function Asite({ params }) {
     newSiteSets[index].excelFile = file;
     setSiteSets(newSiteSets);
   };
+  
   const handleRemoveExcel = (index) => {
     setSiteSets((prev) =>
       prev.map((s, i) => (i === index ? { ...s, excelFile: null } : s))
@@ -159,17 +160,21 @@ export default function Asite({ params }) {
   };
 
   const handleClone = async () => {
+    setLoading(true);
     for (const url of urls) {
       try {
-        const response = await fetch(`${process.env.BASE_URL}/api/Cloner/${url}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sourceProjectId: sourceProject,
-            targetProjectId: targetProject.id,
-            token: token,
-          }),
-        });
+        const response = await fetch(
+          `${process.env.BASE_URL}/api/Cloner/${url}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sourceProjectId: sourceProject,
+              targetProjectId: targetProject.id,
+              token: token,
+            }),
+          }
+        );
 
         const data = await response.json();
         console.log(`Response from ${url}:`, data);
@@ -180,40 +185,6 @@ export default function Asite({ params }) {
     setAllLoading(false);
     setLoading(false);
   };
-
-  // const handleClone = async () => {
-  //   try {
-  //     setLoading(true);
-  //     setAllLoading(true);
-  //     const requests = urls.map((url) =>
-  //       fetch(`${process.env.BASE_URL}/api/Cloner/${url}`, {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({
-  //           sourceProjectId: sourceProject,
-  //           targetProjectId: targetProject.id,
-  //           token: token,
-  //         }),
-  //       })
-  //         .then((response) => response.json())
-  //         .then((data) => {
-  //           console.log(`${data}`);
-  //         })
-  //     );
-
-  //     Promise.all(requests)
-  //       .then((results) => {
-  //         console.log(results);
-  //         setAllLoading(false);
-  //         setLoading(false);
-  //       })
-  //       .catch((error) => console.log(error));
-  //   } catch (err) {
-  //     setLoading(false);
-  //     setAllLoading(false);
-  //     console.error("Failed to clone:", err);
-  //   }
-  // };
 
   const messages = [
     "Revision setting...",
@@ -312,7 +283,11 @@ export default function Asite({ params }) {
             disabled={!projectName || loading}
             sx={{ mt: "16px" }}
           >
-            {loading ? <CircularProgress size="30px" color="inherit" /> : "Create"}
+            {loading ? (
+              <CircularProgress size="30px" color="inherit" />
+            ) : (
+              "Create"
+            )}
           </Button>
         </FormControl>
       </Box>
@@ -360,24 +335,36 @@ export default function Asite({ params }) {
                             color="error"
                             size="small"
                             onClick={() => handleRemoveExcel(index)}
+                            disabled={loading}
                           >
-                            Remove
+                            {loading ? (
+                              <CircularProgress size="20px" color="inherit" />
+                            ) : (
+                              "Remove"
+                            )}
                           </Button>
                         ) : (
                           <Button
                             variant="contained"
                             component="label"
                             size="small"
+                            disabled={loading}
                           >
-                            Upload
-                            <input
-                              type="file"
-                              accept=".xlsx, .xls"
-                              hidden
-                              onChange={(e) =>
-                                handleExcelUpload(index, e.target.files[0])
-                              }
-                            />
+                            {loading ? (
+                              <CircularProgress size="20px" color="inherit" />
+                            ) : (
+                              <>
+                                Upload
+                                <input
+                                  type="file"
+                                  accept=".xlsx, .xls"
+                                  hidden
+                                  onChange={(e) =>
+                                    handleExcelUpload(index, e.target.files[0])
+                                  }
+                                />
+                              </>
+                            )}
                           </Button>
                         )}
                       </TableCell>
@@ -397,7 +384,11 @@ export default function Asite({ params }) {
               }
               sx={{ mt: "16px" }}
             >
-              {loading ? <CircularProgress size="30px" color="inherit" /> : "Import"}
+              {loading ? (
+                <CircularProgress size="30px" color="inherit" />
+              ) : (
+                "Import"
+              )}
             </Button>
           </FormControl>
         </Box>
@@ -405,7 +396,7 @@ export default function Asite({ params }) {
       {importCompleted && siteSets.length > 0 && (
         <Box display="flex" gap={1} flexWrap="wrap" sx={{ mt: 1 }}>
           <FormControl margin="normal" sx={{ flex: 1 }}>
-            {allLoading ? (
+            {loading ? (
               <CircularProgressWithLabel value={progress} />
             ) : (
               <Button
@@ -414,7 +405,9 @@ export default function Asite({ params }) {
                 color="primary"
                 onClick={() => handleClone()}
                 sx={{ mt: "16px" }}
-                disabled={!siteSets.some((siteSet) => siteSet.excelFile !== undefined)}
+                disabled={
+                  !siteSets.some((siteSet) => siteSet.excelFile !== undefined)
+                }
               >
                 Clone All Sets
               </Button>
