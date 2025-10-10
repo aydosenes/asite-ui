@@ -7,10 +7,9 @@ import {
   Button,
   Container,
   MenuItem,
-  Select,
   FormControl,
-  InputLabel,
   Snackbar,
+  Alert,
   CircularProgress,
   TextField,
   Box,
@@ -35,6 +34,8 @@ export default function Asite({ params }) {
   const [projects, setProjects] = useState([]);
   const [siteSets, setSiteSets] = useState([]);
   const [token, setToken] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [message, setMessage] = useState("");
   const [importCompleted, setImportCompleted] = useState(false);
   const urls = [
     "revision-sets",
@@ -124,7 +125,7 @@ export default function Asite({ params }) {
     newSiteSets[index].excelFile = file;
     setSiteSets(newSiteSets);
   };
-  
+
   const handleRemoveExcel = (index) => {
     setSiteSets((prev) =>
       prev.map((s, i) => (i === index ? { ...s, excelFile: null } : s))
@@ -182,8 +183,18 @@ export default function Asite({ params }) {
         console.error(`Error in request ${url}:`, error);
       }
     }
+    setIsSuccess(true);
+    setMessage("Klonlama başarıyla tamamlandı!");
+    setOpen(true);
     setAllLoading(false);
     setLoading(false);
+  };
+
+  const [open, setOpen] = useState(false);
+
+  const handleClose = (event, reason) => {
+    if (reason === "clickaway") return;
+    setOpen(false);
   };
 
   const messages = [
@@ -413,6 +424,20 @@ export default function Asite({ params }) {
               </Button>
             )}
           </FormControl>
+          <Snackbar
+            open={open}
+            autoHideDuration={5000} // 3 saniye sonra otomatik kapanacak
+            onClose={handleClose}
+            anchorOrigin={{ vertical: "top", horizontal: "right" }}
+          >
+            <Alert
+              onClose={handleClose}
+              severity={isSuccess ? "success" : "error"}
+              sx={{ width: "100%" }}
+            >
+              {message}
+            </Alert>
+          </Snackbar>
         </Box>
       )}
     </Container>

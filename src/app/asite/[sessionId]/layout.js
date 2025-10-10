@@ -16,6 +16,7 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import { usePathname, useRouter } from "next/navigation";
 import LoginIcon from "@mui/icons-material/Login";
+import { CircularProgress } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import {
@@ -35,7 +36,6 @@ export default function DashboardLayout({ children }) {
   const sessionId = segments[2];
   const userId = segments[4];
   const [open, setOpen] = React.useState(false);
-
   const handleMapping = () => {
     const newUrl = `/asite/${sessionId}/mapping/${userId}`;
     router.push(newUrl);
@@ -69,33 +69,39 @@ export default function DashboardLayout({ children }) {
   const [confirmLogoutDialog, setConfirmLogoutDialog] = useState(false);
 
   const handleLogin = async () => {
-    if (email && password) {
-      setLoading(true);
-      const response = await fetch(
-        `${process.env.BASE_URL}/api/Auth/create-token`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setToken(data.data.access_token);
-        localStorage.setItem("crane-user", email);
-        localStorage.setItem("crane-token", data.data.access_token);
-        const expirationTime = Date.now() + data.data.expires_in * 1000;
-        localStorage.setItem(
-          "crane-token-expiration",
-          expirationTime.toString()
+    try {
+      if (email && password) {
+        setLoading(true);
+        const response = await fetch(
+          `${process.env.BASE_URL}/api/Auth/create-token`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          }
         );
-      } else {
-        const data = await response.json();
-        setError(data.message || "Login failed");
+        if (response.ok) {
+          const data = await response.json();
+          setToken(data.data.access_token);
+          localStorage.setItem("crane-user", email);
+          localStorage.setItem("crane-token", data.data.access_token);
+          const expirationTime = Date.now() + data.data.expires_in * 1000;
+          localStorage.setItem(
+            "crane-token-expiration",
+            expirationTime.toString()
+          );
+        } else {
+          const data = await response.json();
+          setError(data.message || "Login failed");
+        }
+        setLoading(false);
+        setLoginDialog(false);
       }
+    } catch (error) {
       setLoading(false);
-      setLoginDialog(false);
+      setError(error.message || "Login failed");
     }
+
   };
 
   const handleLogout = () => {
@@ -283,10 +289,18 @@ export default function DashboardLayout({ children }) {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setLoginDialog(false)} disabled={loading}>
-            Vazgeç
+            {loading ? (
+              <CircularProgress size="20px" color="inherit" />
+            ) : (
+              "Vazgeç"
+            )}
           </Button>
           <Button variant="contained" onClick={handleLogin} disabled={loading}>
-            Giriş Yap
+            {loading ? (
+              <CircularProgress size="20px" color="inherit" />
+            ) : (
+              "Giriş Yap"
+            )}
           </Button>
         </DialogActions>
       </Dialog>

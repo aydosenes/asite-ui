@@ -12,13 +12,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Asite Integration",
-  description: "by enesaydos",
+  title: "Penguen Asite Integration",
+  description: "by enesaydos",  
 };
 
 export default function RootLayout({ children }) {
   return (
+
     <html lang="en">
+      <head><link rel="icon" href="https://www.penguen.ist/wp-content/uploads/2018/12/favicon-1.png" /></head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {children}
       </body>
