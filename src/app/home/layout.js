@@ -65,7 +65,8 @@ export default function DashboardLayout({ children }) {
   const [asiteToken, setAsiteToken] = useState(null);
   const [loginDialog, setLoginDialog] = useState(false);
   const [email, setEmail] = useState("");
-  const [asiteEmail, setAsiteEmail] = useState("");
+  const [emailAsite, setEmailAsite] = useState("");
+  const [emailCrane, setEmailCrane] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -75,7 +76,8 @@ export default function DashboardLayout({ children }) {
     try {
       if (email && password) {
         setLoading(true);        
-        if (type === "crane") {          
+        if (type === "crane") {   
+          setEmailCrane(email);       
           const response = await fetch(
             `${process.env.BASE_URL}/api/Auth/crane-token`,
             {
@@ -99,6 +101,7 @@ export default function DashboardLayout({ children }) {
             setError(data.message || "Login failed");
           }
         } else {
+          setEmailAsite(email);
           const response = await fetch(
             `${process.env.BASE_URL}/api/Asite/login`,
             {
@@ -114,7 +117,6 @@ export default function DashboardLayout({ children }) {
               setLoading(false);
             } else {
               setAsiteToken(data.sessionId);
-              setAsiteEmail(email);
               localStorage.setItem("asite-userId", data.userId);
               localStorage.setItem("asite-sessionId", data.sessionId);
               const expirationTime = Date.now() + 24 * 60 * 60 * 1000;
@@ -134,6 +136,9 @@ export default function DashboardLayout({ children }) {
     } catch (error) {
       setLoading(false);
       setError(error.message || "Login failed");
+    } finally{
+      setEmail("");
+      setPassword("");
     }
   };
 
@@ -307,14 +312,14 @@ export default function DashboardLayout({ children }) {
           <ListItem disablePadding>
             <ListItemButton onClick={() => handleAuthClick("asite")}>
               <ListItemIcon></ListItemIcon>
-              <ListItemText primary={asiteToken ? "Asite Available" : "Asite Login"} />
+              <ListItemText primary={asiteToken ? emailAsite : "Asite Login"} />
               {!asiteToken && <LoginIcon />}
             </ListItemButton>
           </ListItem>
           <ListItem disablePadding>
             <ListItemButton onClick={() => handleAuthClick("crane")}>
               <ListItemIcon></ListItemIcon>
-              <ListItemText primary={token ? "Crane Available" : "Crane Login"} />
+              <ListItemText primary={token ? emailCrane : "Crane Login"} />
               {!token && <LoginIcon />}
             </ListItemButton>
           </ListItem>
