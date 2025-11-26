@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Auth from "@/app/components/Auth";
 import { useRouter } from "next/navigation";
 import {
   Typography,
@@ -22,10 +23,8 @@ import {
   Paper,
 } from "@mui/material";
 import PropTypes from "prop-types";
-import { use } from "react";
 
-export default function Asite({ params }) {
-  const unwrappedParams = use(params);
+export default function Asite() {
   const [loading, setLoading] = useState(false);
   const [allLoading, setAllLoading] = useState(false);
   const [projectName, setProjectName] = useState("");
@@ -258,188 +257,194 @@ export default function Asite({ params }) {
   };
 
   return (
-    <Container maxWidth="md" sx={{ pb: 20 }}>
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Project Cloner
-      </Typography>
-      <Box display="flex" gap={1} flexWrap="wrap" sx={{ mt: 1 }}>
-        <FormControl margin="normal" sx={{ flex: 1 }}>
-          <TextField
-            select
-            label="Source Project"
-            value={sourceProject}
-            onChange={handleSetSourceProject}
-            size="small"
-            sx={{ flex: 1 }}
-          >
-            {projects.map((s) => (
-              <MenuItem key={s.id} value={s.id}>
-                {s.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="Project Name"
-            variant="outlined"
-            size="small"
-            sx={{ flex: 1, mt: 2 }} // margin alignment için mt ekleyebilirsin
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            onClick={() => handleCreate()}
-            disabled={!projectName || loading}
-            sx={{ mt: "16px" }}
-          >
-            {loading ? (
-              <CircularProgress size="30px" color="inherit" />
-            ) : (
-              "Create"
-            )}
-          </Button>
-        </FormControl>
-      </Box>
-      {sourceProject && targetProject && siteSets.length > 0 && (
+    <Auth>
+      <Container maxWidth="md" sx={{ pb: 20 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Project Cloner
+        </Typography>
         <Box display="flex" gap={1} flexWrap="wrap" sx={{ mt: 1 }}>
           <FormControl margin="normal" sx={{ flex: 1 }}>
-            <TableContainer component={Paper} sx={{ mt: 2 }}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>
-                      <Typography fontWeight="bold">Site Set Name</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography fontWeight="bold">File Name</Typography>
-                    </TableCell>
-                    <TableCell></TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {siteSets.map((siteSet, index) => (
-                    <TableRow key={siteSet.id || index}>
-                      <TableCell align="left">
-                        <Typography
-                          sx={{ opacity: siteSet.excelFile ? 1 : 0.3 }}
-                        >
-                          {siteSet.name}
-                        </Typography>
-                      </TableCell>
-
-                      <TableCell
-                        sx={{
-                          maxWidth: 50, // sabit max genişlik
-                          whiteSpace: "nowrap", // tek satır
-                          overflow: "hidden", // taşanı gizle
-                          textOverflow: "ellipsis", // ... ile kısalt
-                        }}
-                      >
-                        {siteSet.excelFile ? siteSet.excelFile.name : "-"}
-                      </TableCell>
-                      <TableCell align="right">
-                        {siteSet.excelFile ? (
-                          <Button
-                            variant="outlined"
-                            color="error"
-                            size="small"
-                            onClick={() => handleRemoveExcel(index)}
-                            disabled={loading}
-                          >
-                            {loading ? (
-                              <CircularProgress size="20px" color="inherit" />
-                            ) : (
-                              "Remove"
-                            )}
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="contained"
-                            component="label"
-                            size="small"
-                            disabled={loading}
-                          >
-                            {loading ? (
-                              <CircularProgress size="20px" color="inherit" />
-                            ) : (
-                              <>
-                                Upload
-                                <input
-                                  type="file"
-                                  accept=".xlsx, .xls"
-                                  hidden
-                                  onChange={(e) =>
-                                    handleExcelUpload(index, e.target.files[0])
-                                  }
-                                />
-                              </>
-                            )}
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <TextField
+              select
+              label="Source Project"
+              value={sourceProject}
+              onChange={handleSetSourceProject}
+              size="small"
+              sx={{ flex: 1 }}
+            >
+              {projects.map((s) => (
+                <MenuItem key={s.id} value={s.id}>
+                  {s.name}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="Project Name"
+              variant="outlined"
+              size="small"
+              sx={{ flex: 1, mt: 2 }} // margin alignment için mt ekleyebilirsin
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+            />
             <Button
               type="submit"
               variant="contained"
               color="primary"
-              onClick={() => handleImportSiteSets()}
-              disabled={
-                !siteSets.some((siteSet) => siteSet.excelFile !== undefined) ||
-                loading
-              }
+              onClick={() => handleCreate()}
+              disabled={!projectName || loading}
               sx={{ mt: "16px" }}
             >
               {loading ? (
                 <CircularProgress size="30px" color="inherit" />
               ) : (
-                "Import"
+                "Create"
               )}
             </Button>
           </FormControl>
         </Box>
-      )}
-      {importCompleted && siteSets.length > 0 && (
-        <Box display="flex" gap={1} flexWrap="wrap" sx={{ mt: 1 }}>
-          <FormControl margin="normal" sx={{ flex: 1 }}>
-            {loading ? (
-              <CircularProgressWithLabel value={progress} />
-            ) : (
+        {sourceProject && targetProject && siteSets.length > 0 && (
+          <Box display="flex" gap={1} flexWrap="wrap" sx={{ mt: 1 }}>
+            <FormControl margin="normal" sx={{ flex: 1 }}>
+              <TableContainer component={Paper} sx={{ mt: 2 }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>
+                        <Typography fontWeight="bold">Site Set Name</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography fontWeight="bold">File Name</Typography>
+                      </TableCell>
+                      <TableCell></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {siteSets.map((siteSet, index) => (
+                      <TableRow key={siteSet.id || index}>
+                        <TableCell align="left">
+                          <Typography
+                            sx={{ opacity: siteSet.excelFile ? 1 : 0.3 }}
+                          >
+                            {siteSet.name}
+                          </Typography>
+                        </TableCell>
+
+                        <TableCell
+                          sx={{
+                            maxWidth: 50, // sabit max genişlik
+                            whiteSpace: "nowrap", // tek satır
+                            overflow: "hidden", // taşanı gizle
+                            textOverflow: "ellipsis", // ... ile kısalt
+                          }}
+                        >
+                          {siteSet.excelFile ? siteSet.excelFile.name : "-"}
+                        </TableCell>
+                        <TableCell align="right">
+                          {siteSet.excelFile ? (
+                            <Button
+                              variant="outlined"
+                              color="error"
+                              size="small"
+                              onClick={() => handleRemoveExcel(index)}
+                              disabled={loading}
+                            >
+                              {loading ? (
+                                <CircularProgress size="20px" color="inherit" />
+                              ) : (
+                                "Remove"
+                              )}
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="contained"
+                              component="label"
+                              size="small"
+                              disabled={loading}
+                            >
+                              {loading ? (
+                                <CircularProgress size="20px" color="inherit" />
+                              ) : (
+                                <>
+                                  Upload
+                                  <input
+                                    type="file"
+                                    accept=".xlsx, .xls"
+                                    hidden
+                                    onChange={(e) =>
+                                      handleExcelUpload(
+                                        index,
+                                        e.target.files[0]
+                                      )
+                                    }
+                                  />
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
               <Button
                 type="submit"
                 variant="contained"
                 color="primary"
-                onClick={() => handleClone()}
-                sx={{ mt: "16px" }}
+                onClick={() => handleImportSiteSets()}
                 disabled={
-                  !siteSets.some((siteSet) => siteSet.excelFile !== undefined)
+                  !siteSets.some(
+                    (siteSet) => siteSet.excelFile !== undefined
+                  ) || loading
                 }
+                sx={{ mt: "16px" }}
               >
-                Clone All Sets
+                {loading ? (
+                  <CircularProgress size="30px" color="inherit" />
+                ) : (
+                  "Import"
+                )}
               </Button>
-            )}
-          </FormControl>
-          <Snackbar
-            open={open}
-            autoHideDuration={5000} // 3 saniye sonra otomatik kapanacak
-            onClose={handleClose}
-            anchorOrigin={{ vertical: "top", horizontal: "right" }}
-          >
-            <Alert
+            </FormControl>
+          </Box>
+        )}
+        {importCompleted && siteSets.length > 0 && (
+          <Box display="flex" gap={1} flexWrap="wrap" sx={{ mt: 1 }}>
+            <FormControl margin="normal" sx={{ flex: 1 }}>
+              {loading ? (
+                <CircularProgressWithLabel value={progress} />
+              ) : (
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  onClick={() => handleClone()}
+                  sx={{ mt: "16px" }}
+                  disabled={
+                    !siteSets.some((siteSet) => siteSet.excelFile !== undefined)
+                  }
+                >
+                  Clone All Sets
+                </Button>
+              )}
+            </FormControl>
+            <Snackbar
+              open={open}
+              autoHideDuration={5000} // 3 saniye sonra otomatik kapanacak
               onClose={handleClose}
-              severity={isSuccess ? "success" : "error"}
-              sx={{ width: "100%" }}
+              anchorOrigin={{ vertical: "top", horizontal: "right" }}
             >
-              {message}
-            </Alert>
-          </Snackbar>
-        </Box>
-      )}
-    </Container>
+              <Alert
+                onClose={handleClose}
+                severity={isSuccess ? "success" : "error"}
+                sx={{ width: "100%" }}
+              >
+                {message}
+              </Alert>
+            </Snackbar>
+          </Box>
+        )}
+      </Container>
+    </Auth>
   );
 }

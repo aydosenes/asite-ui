@@ -29,12 +29,22 @@ import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import Auth from "@/app/components/Auth";
 
 export default function Final({ params }) {
   const unwrappedParams = use(params);
   const router = useRouter();
   const [endpoint, setEndpoint] = useState("");
+  const [sessionId, setSessionId] = useState("");
+  const [userId, setUserId] = useState("");
   const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    const session = localStorage.getItem("asite-sessionId");
+    if (session) setSessionId(session);
+    const user = localStorage.getItem("asite-userId");
+    if (user) setUserId(user);
+  }, []);
+
   const handleCopy = async () => {
     try {
       const content = `${process.env.BASE_URL}/api/Asite/${endpoint}`;
@@ -74,66 +84,64 @@ export default function Final({ params }) {
     }
   };
   return (
-    <Container maxWidth="md">
-      <FormControl fullWidth variant="outlined" margin="normal">
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Typography sx={{ alignItems: "center", paddingTop: 2 }}>
-            {`${process.env.BASE_URL}/api/Asite/`}
-          </Typography>
-          <TextField
-            id="standard-basic"
-            label="Your Endpoint"
-            variant="standard"
-            size="small"
-            value={endpoint}
-            onChange={(e) => {
-              setEndpoint(e.target.value);
-            }}
-          />
-          <Tooltip title={copied ? "Copied!" : "Copy"} arrow>
+    <Auth>
+      <Container maxWidth="md">
+        <FormControl fullWidth variant="outlined" margin="normal">
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography sx={{ alignItems: "center", paddingTop: 2 }}>
+              {`${process.env.BASE_URL}/api/Asite/`}
+            </Typography>
+            <TextField
+              id="standard-basic"
+              label="Your Endpoint"
+              variant="standard"
+              size="small"
+              value={endpoint}
+              onChange={(e) => {
+                setEndpoint(e.target.value);
+              }}
+            />
+            <Tooltip title={copied ? "Copied!" : "Copy"} arrow>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleCopy}
+                startIcon={<ContentCopyIcon />}
+                disabled={endpoint == ""}
+              >
+                Copy
+              </Button>
+            </Tooltip>
+          </Stack>
+        </FormControl>
+        <Grid2 container spacing={2} direction="row" mt={3}>
+          <Grid2 item size={4}>
             <Button
+              type="submit"
               variant="contained"
               color="primary"
-              onClick={handleCopy}
-              startIcon={<ContentCopyIcon />}
-              disabled={endpoint == ""}
+              onClick={() => handleEndpoint()}
+              disabled={handled || endpoint == ""}
+              fullWidth
             >
-              Copy
+              GENERATE ENDPOINT
             </Button>
-          </Tooltip>
-        </Stack>
-      </FormControl>
-      <Grid2 container spacing={2} direction="row" mt={3}>
-        <Grid2 item size={4}>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            onClick={() => handleEndpoint()}
-            disabled={handled || endpoint == ""}
-            fullWidth
-          >
-            GENERATE ENDPOINT
-          </Button>
+          </Grid2>
+          <Grid2 item size={3}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              onClick={() =>
+                router.push(`/home/mapping`)
+              }
+              fullWidth
+            >
+              NEW MAPPING
+            </Button>
+          </Grid2>
         </Grid2>
-        <Grid2 item size={3}>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            onClick={() =>
-              router.push(
-                `/asite/${decodeURIComponent(
-                  unwrappedParams.sessionId
-                )}/mapping/${unwrappedParams.userId}`
-              )
-            }
-            fullWidth
-          >
-            NEW MAPPING
-          </Button>
-        </Grid2>
-      </Grid2>
-    </Container>
+      </Container>
+    </Auth>
   );
 }

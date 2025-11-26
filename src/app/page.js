@@ -16,30 +16,38 @@ export default function Home() {
   const handleLogin = async (e) => {
     try {
       e.preventDefault();
-      setError(null);
-      setLoading(true);
-      const response = await fetch(`${process.env.BASE_URL}/api/Asite/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.message) {
-          setError(data.message);
-          setLoading(false);
-        } else router.push(`/asite/${data.sessionId}/mapping/${data.userId}`);
-      } else {
-        const data = await response.json();
-        setError(data.message || "Login failed");
+      if (email && password) {
+        setLoading(true);
+        const response = await fetch(
+          `${process.env.BASE_URL}/api/Auth/create-token`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          localStorage.setItem("main-user", email);
+          localStorage.setItem("main-token", data.access_token);
+          const expirationTime = Date.now() + 24 * 60 * 60 * 1000;
+          localStorage.setItem(
+            "main-token-expiration",
+            expirationTime.toString()
+          );
+          router.push(`/home`);
+        } else {
+          const data = await response.json();
+          setError(data.message || "Login failed");
+        }
         setLoading(false);
       }
     } catch (error) {
-      setError("Login failed");
       setLoading(false);
+      setError(error.message || "Login failed");
     }
   };
-
+  
   return (
     <div className={styles.page}>
       <main className={styles.main}>

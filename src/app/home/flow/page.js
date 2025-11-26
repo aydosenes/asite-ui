@@ -9,6 +9,7 @@ import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
+import TableSortLabel from "@mui/material/TableSortLabel";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
@@ -20,6 +21,38 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { Button } from "@mui/material";
 import { usePathname, useRouter } from "next/navigation";
+import Auth from "@/app/components/Auth";
+
+function descendingComparator(a, b, orderBy) {
+  const valA = a[orderBy];
+  const valB = b[orderBy];
+
+  if (orderBy === "createdAt") {
+    return new Date(valB) - new Date(valA);
+  }
+
+  if (typeof valA === "number" && typeof valB === "number") {
+    return valB - valA;
+  }
+
+  return valB.toString().localeCompare(valA.toString());
+}
+
+function getComparator(order, orderBy) {
+  return order === "desc"
+    ? (a, b) => descendingComparator(a, b, orderBy)
+    : (a, b) => -descendingComparator(a, b, orderBy);
+}
+
+function stableSort(array, comparator) {
+  const stabilized = array.map((el, index) => [el, index]);
+  stabilized.sort((a, b) => {
+    const cmp = comparator(a[0], b[0]);
+    if (cmp !== 0) return cmp;
+    return a[1] - b[1];
+  });
+  return stabilized.map((el) => el[0]);
+}
 
 function Row({ row, onDelete }) {
   const [open, setOpen] = useState(false);
@@ -51,6 +84,17 @@ function Row({ row, onDelete }) {
     }
   };
 
+  function formattedDate(date) {
+    const target = new Date(date);
+    return target.toLocaleString("tr-TR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
   return (
     <React.Fragment>
       <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
@@ -63,15 +107,17 @@ function Row({ row, onDelete }) {
             {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
           </IconButton>
         </TableCell>
+        <TableCell>{row.subject}</TableCell>
         <TableCell>{row.flowId}</TableCell>
         <TableCell>{row.statusString}</TableCell>
+        <TableCell>{formattedDate(row.createdAt)}</TableCell>
         <TableCell>
           <IconButton
             aria-label="expand row"
             size="small"
             onClick={() => handleDownload(row.flowId)}
           >
-            {row.statusString === "Finished" && <DownloadIcon color="info"/>}
+            {row.statusString === "Finished" && <DownloadIcon color="info" />}
           </IconButton>
         </TableCell>
         <TableCell>
@@ -139,6 +185,8 @@ function Row({ row, onDelete }) {
 
 export default function CollapsibleTable({ params }) {
   const unwrappedParams = use(params);
+  const [order, setOrder] = useState("asc");
+  const [orderBy, setOrderBy] = useState("subject");
   const [flowList, setFlowList] = useState([]);
   const router = useRouter();
   const pathname = usePathname();
@@ -179,43 +227,107 @@ export default function CollapsibleTable({ params }) {
   };
 
   const handleAdd = () => {
-    const newUrl = `/asite/${sessionId}/create-flow/${userId}`;
+    const newUrl = `/home/create-flow`;
     router.push(newUrl);
   };
 
+  const handleRequestSort = (property) => {
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(property);
+  };
+
+  const sortedFlowList = stableSort(flowList, getComparator(order, orderBy));
+
   return (
-    <>
-      <Typography variant="h6" gutterBottom component="div">
-        İmza Süreçleri Listesi
-      </Typography>
+    <Auth>
       <TableContainer component={Paper}>
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          mb={2}
+        >
+          <Box display="flex" alignItems="center">
+            <img
+              src="/penguen.jpeg"
+              alt="Logo"
+              height={40}
+              style={{ marginRight: 8 }}
+            />
+          </Box>
+          <Box flexGrow={1} display="flex" justifyContent="center">
+            <Typography variant="h6" component="div">
+              İmza Süreçleri Listesi
+            </Typography>
+          </Box>
+          <Box>
+            <Button
+              variant="contained"
+              size="small"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={handleAdd}
+            >
+              Yeni İmza Süreci
+            </Button>
+          </Box>
+        </Box>
         <Table aria-label="collapsible table">
           <TableHead>
             <TableRow>
-              <TableCell>
-                <Button
-                  variant="text"
-                  size="small"
-                  color="primary"
-                  startIcon={<AddIcon />}
-                  onClick={handleAdd}
+              <TableCell></TableCell>
+              <TableCell sortDirection={orderBy === "subject" ? order : false}>
+                <TableSortLabel
+                  active={orderBy === "subject"}
+                  direction={orderBy === "subject" ? order : "asc"}
+                  onClick={() => handleRequestSort("subject")}
                 >
-                  Yeni İmza Süreci
-                </Button>
+                  Konu
+                </TableSortLabel>
               </TableCell>
-              <TableCell>Süreç ID</TableCell>
-              <TableCell>Durum</TableCell>
+              <TableCell sortDirection={orderBy === "flowId" ? order : false}>
+                <TableSortLabel
+                  active={orderBy === "flowId"}
+                  direction={orderBy === "flowId" ? order : "asc"}
+                  onClick={() => handleRequestSort("flowId")}
+                >
+                  Süreç ID
+                </TableSortLabel>
+              </TableCell>
+              <TableCell
+                sortDirection={orderBy === "statusString" ? order : false}
+              >
+                <TableSortLabel
+                  active={orderBy === "statusString"}
+                  direction={orderBy === "statusString" ? order : "asc"}
+                  onClick={() => handleRequestSort("statusString")}
+                >
+                  Durum
+                </TableSortLabel>
+              </TableCell>
+              <TableCell
+                sortDirection={orderBy === "createdAt" ? order : false}
+              >
+                <TableSortLabel
+                  active={orderBy === "createdAt"}
+                  direction={orderBy === "createdAt" ? order : "asc"}
+                  onClick={() => handleRequestSort("createdAt")}
+                >
+                  Tarih
+                </TableSortLabel>
+              </TableCell>
               <TableCell>İndir</TableCell>
               <TableCell>Sil</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {flowList.map((row) => (
+            {sortedFlowList.map((row) => (
               <Row key={row.flowId} row={row} onDelete={handleDelete} />
             ))}
           </TableBody>
         </Table>
       </TableContainer>
-    </>
+    </Auth>
   );
 }

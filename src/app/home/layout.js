@@ -37,22 +37,22 @@ export default function DashboardLayout({ children }) {
   const userId = segments[4];
   const [open, setOpen] = React.useState(false);
   const handleMapping = () => {
-    const newUrl = `/asite/${sessionId}/mapping/${userId}`;
+    const newUrl = `/home/mapping`;
     router.push(newUrl);
   };
 
   const handleEsignature = () => {
-    const newUrl = `/asite/${sessionId}/flow/${userId}`;
+    const newUrl = `/home/flow`;
     router.push(newUrl);
   };
 
   const handleCraneFormTemplate = () => {
-    const newUrl = `/asite/${sessionId}/crane/${userId}`;
+    const newUrl = `/home/crane`;
     router.push(newUrl);
   };
 
   const handleProjectCloner = () => {
-    const newUrl = `/asite/${sessionId}/cloner/${userId}`;
+    const newUrl = `/home/cloner`;
     router.push(newUrl);
   };
 
@@ -61,8 +61,11 @@ export default function DashboardLayout({ children }) {
   };
 
   const [token, setToken] = useState(null);
+  const [type, setType] = useState("");
+  const [asiteToken, setAsiteToken] = useState(null);
   const [loginDialog, setLoginDialog] = useState(false);
   const [email, setEmail] = useState("");
+  const [asiteEmail, setAsiteEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -71,28 +74,59 @@ export default function DashboardLayout({ children }) {
   const handleLogin = async () => {
     try {
       if (email && password) {
-        setLoading(true);
-        const response = await fetch(
-          `${process.env.BASE_URL}/api/Auth/create-token`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-          }
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setToken(data.data.access_token);
-          localStorage.setItem("crane-user", email);
-          localStorage.setItem("crane-token", data.data.access_token);
-          const expirationTime = Date.now() + data.data.expires_in * 1000;
-          localStorage.setItem(
-            "crane-token-expiration",
-            expirationTime.toString()
+        setLoading(true);        
+        if (type === "crane") {          
+          const response = await fetch(
+            `${process.env.BASE_URL}/api/Auth/crane-token`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, password }),
+            }
           );
+          if (response.ok) {
+            const data = await response.json();
+            setToken(data.data.access_token);
+            localStorage.setItem("crane-user", email);
+            localStorage.setItem("crane-token", data.data.access_token);
+            const expirationTime = Date.now() + data.data.expires_in * 1000;
+            localStorage.setItem(
+              "crane-token-expiration",
+              expirationTime.toString()
+            );
+          } else {
+            const data = await response.json();
+            setError(data.message || "Login failed");
+          }
         } else {
-          const data = await response.json();
-          setError(data.message || "Login failed");
+          const response = await fetch(
+            `${process.env.BASE_URL}/api/Asite/login`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, password }),
+            }
+          );
+          if (response.ok) {
+            const data = await response.json();
+            if (data.message) {
+              setError(data.message);
+              setLoading(false);
+            } else {
+              setAsiteToken(data.sessionId);
+              setAsiteEmail(email);
+              localStorage.setItem("asite-userId", data.userId);
+              localStorage.setItem("asite-sessionId", data.sessionId);
+              const expirationTime = Date.now() + 24 * 60 * 60 * 1000;
+              localStorage.setItem(
+                "asite-sessionId-expiration",
+                expirationTime.toString()
+              );
+            }
+          } else {
+            const data = await response.json();
+            setError(data.message || "Login failed");
+          }
         }
         setLoading(false);
         setLoginDialog(false);
@@ -101,20 +135,30 @@ export default function DashboardLayout({ children }) {
       setLoading(false);
       setError(error.message || "Login failed");
     }
-
   };
 
   const handleLogout = () => {
-    setToken(null);
-    localStorage.setItem("crane-user", "");
-    localStorage.setItem("crane-token", "");
-    localStorage.setItem("crane-refresh-token", "");
-    localStorage.setItem("crane-token-expiration", "");
+    if (type === "crane") {
+      setToken(null);
+      localStorage.setItem("crane-user", "");
+      localStorage.setItem("crane-token", "");
+      localStorage.setItem("crane-refresh-token", "");
+      localStorage.setItem("crane-token-expiration", "");
+    } else {
+      setAsiteToken(null);
+      localStorage.setItem("asite-userId", "");
+      localStorage.setItem("asite-sessionId", "");
+      localStorage.setItem("asite-sessionId-expiration", "");
+    }
     setConfirmLogoutDialog(false);
   };
 
-  const handleAuthClick = () => {
-    if (token) {
+  const handleAuthClick = (type) => {
+    console.log(type);
+    setType(type);
+    if (type === "crane" && token) {
+      setConfirmLogoutDialog(true);
+    } else if (type === "asite" && asiteToken) {
       setConfirmLogoutDialog(true);
     } else {
       setLoginDialog(true);
@@ -123,33 +167,61 @@ export default function DashboardLayout({ children }) {
 
   useEffect(() => {
     function checkExpiration() {
-      const expirationTimeStr =
-        localStorage.getItem("crane-token-expiration") || "";
-      if (expirationTimeStr) {
-        const expirationTime = Number(expirationTimeStr);
-        const remainingTime = expirationTime - Date.now();
-        if (remainingTime <= 0) {
-          // Süresi dolmuş, temizle
-          localStorage.setItem("crane-user", "");
-          localStorage.setItem("crane-token", "");
-          localStorage.setItem("crane-token-expiration", "");
-          setToken(null);
-          setEmail("");
-        } else {
-          const craneToken = localStorage.getItem("crane-token") || "";
-          const craneUser = localStorage.getItem("crane-user") || "";
-          if (craneToken) {
-            setToken(craneToken);
-            setEmail(craneUser);
-          }
-          // Süre henüz dolmadı, kalan süreyi kullanarak setTimeout ile temizle
-          setTimeout(() => {
+      if (type === "crane") {
+        const expirationTimeStr =
+          localStorage.getItem("crane-token-expiration") || "";
+        if (expirationTimeStr) {
+          const expirationTime = Number(expirationTimeStr);
+          const remainingTime = expirationTime - Date.now();
+          if (remainingTime <= 0) {
             localStorage.setItem("crane-user", "");
             localStorage.setItem("crane-token", "");
             localStorage.setItem("crane-token-expiration", "");
             setToken(null);
             setEmail("");
-          }, remainingTime);
+          } else {
+            const craneToken = localStorage.getItem("crane-token") || "";
+            const craneUser = localStorage.getItem("crane-user") || "";
+            if (craneToken) {
+              setToken(craneToken);
+              setEmail(craneUser);
+            }
+            setTimeout(() => {
+              localStorage.setItem("crane-user", "");
+              localStorage.setItem("crane-token", "");
+              localStorage.setItem("crane-token-expiration", "");
+              setToken(null);
+              setEmail("");
+            }, remainingTime);
+          }
+        }
+      } else {
+        const expirationTimeStr =
+          localStorage.getItem("asite-sessionId-expiration") || "";
+        if (expirationTimeStr) {
+          const expirationTime = Number(expirationTimeStr);
+          const remainingTime = expirationTime - Date.now();
+          if (remainingTime <= 0) {
+            localStorage.setItem("asite-userId", "");
+            localStorage.setItem("asite-sessionId", "");
+            localStorage.setItem("asite-sessionId-expiration", "");
+            setAsiteToken(null);
+            setEmail("");
+          } else {
+            const asiteToken = localStorage.getItem("asite-sessionId") || "";
+            const asiteUser = localStorage.getItem("asite-userId") || "";
+            if (asiteToken) {
+              setAsiteToken(asiteToken);
+              setEmail(asiteUser);
+            }
+            setTimeout(() => {
+              localStorage.setItem("asite-userId", "");
+              localStorage.setItem("asite-sessionId", "");
+              localStorage.setItem("asite-sessionId-expiration", "");
+              setAsiteToken(null);
+              setEmail("");
+            }, remainingTime);
+          }
         }
       }
     }
@@ -178,7 +250,7 @@ export default function DashboardLayout({ children }) {
         <List>
           {["Asite Form Mapping"].map((text, index) => (
             <ListItem key={text} disablePadding>
-              <ListItemButton onClick={handleMapping}>
+              <ListItemButton onClick={handleMapping} disabled={!asiteToken}>
                 <ListItemIcon>
                   {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
                 </ListItemIcon>
@@ -191,7 +263,7 @@ export default function DashboardLayout({ children }) {
         <List>
           {["E-Signature"].map((text, index) => (
             <ListItem key={text} disablePadding>
-              <ListItemButton onClick={handleEsignature}>
+              <ListItemButton onClick={handleEsignature} disabled={!asiteToken}>
                 <ListItemIcon>
                   {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
                 </ListItemIcon>
@@ -204,7 +276,10 @@ export default function DashboardLayout({ children }) {
         <List>
           {["Crane Form Template"].map((text, index) => (
             <ListItem key={text} disablePadding>
-              <ListItemButton onClick={handleCraneFormTemplate} disabled={!token}>
+              <ListItemButton
+                onClick={handleCraneFormTemplate}
+                disabled={!token}
+              >
                 <ListItemIcon>
                   {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
                 </ListItemIcon>
@@ -215,7 +290,7 @@ export default function DashboardLayout({ children }) {
         </List>
         <Divider />
         <List>
-          {["Project Cloner"].map((text, index) => (
+          {["Crane"].map((text, index) => (
             <ListItem key={text} disablePadding>
               <ListItemButton onClick={handleProjectCloner} disabled={!token}>
                 <ListItemIcon>
@@ -230,9 +305,16 @@ export default function DashboardLayout({ children }) {
       <Box>
         <List>
           <ListItem disablePadding>
-            <ListItemButton onClick={handleAuthClick}>
+            <ListItemButton onClick={() => handleAuthClick("asite")}>
               <ListItemIcon></ListItemIcon>
-              <ListItemText primary={token ? email : "Crane Login"} />
+              <ListItemText primary={asiteToken ? "Asite Available" : "Asite Login"} />
+              {!asiteToken && <LoginIcon />}
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => handleAuthClick("crane")}>
+              <ListItemIcon></ListItemIcon>
+              <ListItemText primary={token ? "Crane Available" : "Crane Login"} />
               {!token && <LoginIcon />}
             </ListItemButton>
           </ListItem>
